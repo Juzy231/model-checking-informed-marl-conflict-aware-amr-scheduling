@@ -1,0 +1,147 @@
+Scenario: low_source_rates
+Reason: low network rates and low-battery entry sensitivity
+PRISM: PRISM version 4.11 
+Constants: p_loss=0.001,p_fail=0.001,p_recover=0.1,p_batt_low=0.001,MAX_WAIT=10
+Started: 2026-10-23T09:45:09+08:00
+PRISM
+=====
+
+Version: 4.11
+Date: Fri Oct 23 09:45:10 CST 2026
+Hostname: blinded-host
+Memory limits: cudd=1g, java(heap)=2g
+Command line: prism Supplementary_Material/formal/prism/amr_shared_priority_mdp.prism Supplementary_Material/formal/prism/amr_shared_priority_mdp.props -const 'p_loss=0.001,p_fail=0.001,p_recover=0.1,p_batt_low=0.001,MAX_WAIT=10' -explicit -javamaxmem 2g
+
+Parsing PRISM model file "Supplementary_Material/formal/prism/amr_shared_priority_mdp.prism"...
+
+Type:        MDP
+Modules:     Clock Network AMR1 AMR2
+Actions:     [net] [move1] [move2] [react]
+Variables:   stage edge_up comm1 comm2 auth1 auth2 zone1 phase1 motion1 wait1 batt_low1 zone2 phase2 motion2 wait2 batt_low2
+Labels:      "collision" "r0_pending" "r1_pending" "complete"
+
+Parsing properties file "Supplementary_Material/formal/prism/amr_shared_priority_mdp.props"...
+
+7 properties:
+(1) Pmin=? [ F<=4000 "collision" ]
+(2) Pmax=? [ F<=4000 "collision" ]
+(3) Pmin=? [ F<=4000 "r0_pending" ]
+(4) Pmax=? [ F<=4000 "r0_pending" ]
+(5) Pmin=? [ F<=4000 "r1_pending" ]
+(6) Pmax=? [ F<=4000 "r1_pending" ]
+(7) Pmax=? [ F<=4000 "complete" ]
+
+---------------------------------------------------------------------
+
+Model checking: Pmin=? [ F<=4000 "collision" ]
+Model constants: p_loss=0.001,p_fail=0.001,p_recover=0.1,p_batt_low=0.001,MAX_WAIT=10
+
+Building model (engine:explicit)...
+Model constants: p_loss=0.001,p_fail=0.001,p_recover=0.1,p_batt_low=0.001,MAX_WAIT=10
+
+Computing reachable states... 60249 states
+Reachable states exploration and model construction done in 0.539 secs.
+Sorting reachable states list...
+
+Time for model construction: 0.693 seconds.
+
+Type:        MDP
+States:      60249 (1 initial)
+Transitions: 192150
+Choices:     91651
+Max/avg:     4/1.52
+
+Starting bounded probabilistic reachability (min)...
+Bounded probabilistic reachability (min) took 4000 iterations and 1.77 seconds.
+
+Value in the initial state: 0.014234978080355206
+
+Time for model checking: 1.782 seconds.
+
+Result: 0.014234978080355206 (exact floating point)
+
+---------------------------------------------------------------------
+
+Model checking: Pmax=? [ F<=4000 "collision" ]
+Model constants: p_loss=0.001,p_fail=0.001,p_recover=0.1,p_batt_low=0.001,MAX_WAIT=10
+
+Starting bounded probabilistic reachability (max)...
+Bounded probabilistic reachability (max) took 4000 iterations and 1.753 seconds.
+
+Value in the initial state: 0.11551666608173797
+
+Time for model checking: 1.759 seconds.
+
+Result: 0.11551666608173797 (exact floating point)
+
+---------------------------------------------------------------------
+
+Model checking: Pmin=? [ F<=4000 "r0_pending" ]
+Model constants: p_loss=0.001,p_fail=0.001,p_recover=0.1,p_batt_low=0.001,MAX_WAIT=10
+
+Starting bounded probabilistic reachability (min)...
+Bounded probabilistic reachability (min) took 4000 iterations and 2.151 seconds.
+
+Value in the initial state: 0.3136709659437878
+
+Time for model checking: 2.153 seconds.
+
+Result: 0.3136709659437878 (exact floating point)
+
+---------------------------------------------------------------------
+
+Model checking: Pmax=? [ F<=4000 "r0_pending" ]
+Model constants: p_loss=0.001,p_fail=0.001,p_recover=0.1,p_batt_low=0.001,MAX_WAIT=10
+
+Starting bounded probabilistic reachability (max)...
+Bounded probabilistic reachability (max) took 4000 iterations and 1.863 seconds.
+
+Value in the initial state: 0.357448929928457
+
+Time for model checking: 1.865 seconds.
+
+Result: 0.357448929928457 (exact floating point)
+
+---------------------------------------------------------------------
+
+Model checking: Pmin=? [ F<=4000 "r1_pending" ]
+Model constants: p_loss=0.001,p_fail=0.001,p_recover=0.1,p_batt_low=0.001,MAX_WAIT=10
+
+Starting bounded probabilistic reachability (min)...
+Bounded probabilistic reachability (min) took 4000 iterations and 1.966 seconds.
+
+Value in the initial state: 0.863040313209348
+
+Time for model checking: 1.967 seconds.
+
+Result: 0.863040313209348 (exact floating point)
+
+---------------------------------------------------------------------
+
+Model checking: Pmax=? [ F<=4000 "r1_pending" ]
+Model constants: p_loss=0.001,p_fail=0.001,p_recover=0.1,p_batt_low=0.001,MAX_WAIT=10
+
+Starting bounded probabilistic reachability (max)...
+Bounded probabilistic reachability (max) took 4000 iterations and 1.932 seconds.
+
+Value in the initial state: 0.8646834242613065
+
+Time for model checking: 1.933 seconds.
+
+Result: 0.8646834242613065 (exact floating point)
+
+---------------------------------------------------------------------
+
+Model checking: Pmax=? [ F<=4000 "complete" ]
+Model constants: p_loss=0.001,p_fail=0.001,p_recover=0.1,p_batt_low=0.001,MAX_WAIT=10
+
+Starting bounded probabilistic reachability (max)...
+Bounded probabilistic reachability (max) took 4000 iterations and 1.966 seconds.
+
+Value in the initial state: 0.999995680729638
+
+Time for model checking: 1.967 seconds.
+
+Result: 0.999995680729638 (exact floating point)
+
+Finished: 2026-10-23T09:45:24+08:00

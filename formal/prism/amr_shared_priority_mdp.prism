@@ -1,0 +1,120 @@
+mdp
+
+// Study-specific primary PRISM MDP for bounded AMR hazard-reachability analysis.
+// stage: network -> AMR1 environment -> AMR2 environment -> synchronous reactions.
+const double p_loss;
+const double p_fail;
+const double p_recover;
+const double p_batt_low; // probability of a high-to-low battery-threshold crossing per active environment update
+const double p_enter = 0.0277777777777778; // 8 of 288 directed legal moves from 88 normal cells (8 wall, 4 hazard cells excluded)
+const double p_exit = 0.5;                  // 8 of 16 directed legal moves from the four hazard cells
+const int MAX_WAIT;
+
+formula bad1 = zone1=1 & auth1=0;
+formula bad2 = zone2=1 & auth2=0;
+
+module Clock
+  stage : [0..3] init 0; // network, AMR1 environment, AMR2 environment, reaction
+  [net]   stage=0 -> (stage'=1);
+  [move1] stage=1 -> (stage'=2);
+  [move2] stage=2 -> (stage'=3);
+  [react] stage=3 -> (stage'=0);
+endmodule
+
+module Network
+  edge_up : [0..1] init 1;
+  comm1 : [0..1] init 1;
+  comm2 : [0..1] init 1;
+  auth1 : [0..1] init 1;
+  auth2 : [0..1] init 1;
+
+  [net] stage=0 & edge_up=1 ->
+      p_fail : (edge_up'=0) & (comm1'=0) & (comm2'=0) & (auth1'=0) & (auth2'=0)
+    + (1-p_fail)*(1-p_loss)*(1-p_loss) : (edge_up'=1) & (comm1'=1) & (comm2'=1) & (auth1'=1) & (auth2'=1)
+    + (1-p_fail)*(1-p_loss)*p_loss : (edge_up'=1) & (comm1'=1) & (comm2'=0) & (auth1'=1) & (auth2'=0)
+    + (1-p_fail)*p_loss*(1-p_loss) : (edge_up'=1) & (comm1'=0) & (comm2'=1) & (auth1'=0) & (auth2'=1)
+    + (1-p_fail)*p_loss*p_loss : (edge_up'=1) & (comm1'=0) & (comm2'=0) & (auth1'=0) & (auth2'=0);
+
+  [net] stage=0 & edge_up=0 ->
+      p_recover : (edge_up'=1) & (comm1'=1) & (comm2'=1) & (auth1'=1) & (auth2'=1)
+    + (1-p_recover) : (edge_up'=0) & (comm1'=0) & (comm2'=0) & (auth1'=0) & (auth2'=0);
+endmodule
+
+module AMR1
+  zone1 : [0..1] init 0; // 0 normal; 1 dangerous
+  phase1 : [0..4] init 0; // 0 Idle, 1 Transfer, 2 Complete, 3 Pause, 4 Local
+  motion1 : [0..2] init 0; // 0 moving, 1 braking, 2 stopped
+  wait1 : [0..MAX_WAIT-1] init 0;
+  batt_low1 : [0..1] init 0; // threshold abstraction; 1 means B < TH_B
+
+  // Four joint outcomes combine map-zone movement and battery-threshold crossing.
+  [move1] stage=1 & motion1!=2 & zone1=0 & batt_low1=0 ->
+      p_enter*p_batt_low : (zone1'=1) & (batt_low1'=1)
+    + p_enter*(1-p_batt_low) : (zone1'=1) & (batt_low1'=0)
+    + (1-p_enter)*p_batt_low : (zone1'=0) & (batt_low1'=1)
+    + (1-p_enter)*(1-p_batt_low) : (zone1'=0) & (batt_low1'=0);
+  [move1] stage=1 & motion1!=2 & zone1=1 & batt_low1=0 ->
+      p_exit*p_batt_low : (zone1'=0) & (batt_low1'=1)
+    + p_exit*(1-p_batt_low) : (zone1'=0) & (batt_low1'=0)
+    + (1-p_exit)*p_batt_low : (zone1'=1) & (batt_low1'=1)
+    + (1-p_exit)*(1-p_batt_low) : (zone1'=1) & (batt_low1'=0);
+  [move1] stage=1 & motion1!=2 & zone1=0 & batt_low1=1 -> p_enter : (zone1'=1) + (1-p_enter) : (zone1'=0);
+  [move1] stage=1 & motion1!=2 & zone1=1 & batt_low1=1 -> p_exit : (zone1'=0) + (1-p_exit) : (zone1'=1);
+  [move1] stage=1 & motion1=2 -> true;
+
+  // R0 > R1 > R2 > R3 > R4. Bounded braking allows stopping after 1..MAX_WAIT reactions.
+  [react] stage=3 & motion1=1 & wait1=MAX_WAIT-1 -> (motion1'=2) & (wait1'=0);
+  [react] stage=3 & motion1=1 & wait1<MAX_WAIT-1 -> (motion1'=2) & (wait1'=0);
+  [react] stage=3 & motion1=1 & wait1<MAX_WAIT-1 -> (motion1'=1) & (wait1'=wait1+1);
+  [react] stage=3 & motion1=0 & bad1 -> (phase1'=3) & (motion1'=1) & (wait1'=0);
+  [react] stage=3 & motion1=0 & !bad1 & batt_low1=1 -> (phase1'=3) & (motion1'=1) & (wait1'=0);
+  [react] stage=3 & motion1=0 & !bad1 & batt_low1=0 & (phase1=1 | phase1=2) & comm1=0 -> (phase1'=4);
+  [react] stage=3 & motion1=0 & !bad1 & batt_low1=0 & phase1=0 & comm1=1 -> (phase1'=1);
+  [react] stage=3 & motion1=0 & !bad1 & batt_low1=0 & phase1=1 & comm1=1 -> (phase1'=2);
+  [react] stage=3 & motion1=2 & !bad1 & batt_low1=0 & phase1=3 & comm1=1 -> (phase1'=0) & (motion1'=0);
+  [react] stage=3 & motion1!=1 & phase1=4 & !bad1 & batt_low1=0 & comm1=1 -> (phase1'=0);
+  [react] stage=3 & motion1=0 & !(bad1 | batt_low1=1 | ((phase1=1 | phase1=2) & comm1=0) | (phase1=0 & comm1=1) | (phase1=1 & comm1=1)) -> true;
+  [react] stage=3 & motion1=2 & !(phase1=3 & !bad1 & batt_low1=0 & comm1=1) & phase1!=4 -> true;
+  [react] stage=3 & motion1!=1 & phase1=4 & (bad1 | batt_low1=1 | comm1=0) -> true;
+endmodule
+
+module AMR2
+  zone2 : [0..1] init 0;
+  phase2 : [0..4] init 0;
+  motion2 : [0..2] init 0;
+  wait2 : [0..MAX_WAIT-1] init 0;
+  batt_low2 : [0..1] init 0;
+
+  [move2] stage=2 & motion2!=2 & zone2=0 & batt_low2=0 ->
+      p_enter*p_batt_low : (zone2'=1) & (batt_low2'=1)
+    + p_enter*(1-p_batt_low) : (zone2'=1) & (batt_low2'=0)
+    + (1-p_enter)*p_batt_low : (zone2'=0) & (batt_low2'=1)
+    + (1-p_enter)*(1-p_batt_low) : (zone2'=0) & (batt_low2'=0);
+  [move2] stage=2 & motion2!=2 & zone2=1 & batt_low2=0 ->
+      p_exit*p_batt_low : (zone2'=0) & (batt_low2'=1)
+    + p_exit*(1-p_batt_low) : (zone2'=0) & (batt_low2'=0)
+    + (1-p_exit)*p_batt_low : (zone2'=1) & (batt_low2'=1)
+    + (1-p_exit)*(1-p_batt_low) : (zone2'=1) & (batt_low2'=0);
+  [move2] stage=2 & motion2!=2 & zone2=0 & batt_low2=1 -> p_enter : (zone2'=1) + (1-p_enter) : (zone2'=0);
+  [move2] stage=2 & motion2!=2 & zone2=1 & batt_low2=1 -> p_exit : (zone2'=0) + (1-p_exit) : (zone2'=1);
+  [move2] stage=2 & motion2=2 -> true;
+
+  [react] stage=3 & motion2=1 & wait2=MAX_WAIT-1 -> (motion2'=2) & (wait2'=0);
+  [react] stage=3 & motion2=1 & wait2<MAX_WAIT-1 -> (motion2'=2) & (wait2'=0);
+  [react] stage=3 & motion2=1 & wait2<MAX_WAIT-1 -> (motion2'=1) & (wait2'=wait2+1);
+  [react] stage=3 & motion2=0 & bad2 -> (phase2'=3) & (motion2'=1) & (wait2'=0);
+  [react] stage=3 & motion2=0 & !bad2 & batt_low2=1 -> (phase2'=3) & (motion2'=1) & (wait2'=0);
+  [react] stage=3 & motion2=0 & !bad2 & batt_low2=0 & (phase2=1 | phase2=2) & comm2=0 -> (phase2'=4);
+  [react] stage=3 & motion2=0 & !bad2 & batt_low2=0 & phase2=0 & comm2=1 -> (phase2'=1);
+  [react] stage=3 & motion2=0 & !bad2 & batt_low2=0 & phase2=1 & comm2=1 -> (phase2'=2);
+  [react] stage=3 & motion2=2 & !bad2 & batt_low2=0 & phase2=3 & comm2=1 -> (phase2'=0) & (motion2'=0);
+  [react] stage=3 & motion2!=1 & phase2=4 & !bad2 & batt_low2=0 & comm2=1 -> (phase2'=0);
+  [react] stage=3 & motion2=0 & !(bad2 | batt_low2=1 | ((phase2=1 | phase2=2) & comm2=0) | (phase2=0 & comm2=1) | (phase2=1 & comm2=1)) -> true;
+  [react] stage=3 & motion2=2 & !(phase2=3 & !bad2 & batt_low2=0 & comm2=1) & phase2!=4 -> true;
+  [react] stage=3 & motion2!=1 & phase2=4 & (bad2 | batt_low2=1 | comm2=0) -> true;
+endmodule
+
+label "collision" = zone1=1 & zone2=1 & (auth1=0 | auth2=0);
+label "r0_pending" = (bad1 & phase1!=3) | (bad2 & phase2!=3);
+label "r1_pending" = (batt_low1=1 & phase1!=3 & !bad1) | (batt_low2=1 & phase2!=3 & !bad2);
+label "complete" = phase1=2 | phase2=2;

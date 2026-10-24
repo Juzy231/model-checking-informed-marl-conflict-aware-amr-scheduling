@@ -1,0 +1,6 @@
+scenario,p_loss,p_fail,p_recover,p_batt_low,max_wait,reason
+low_source_rates,0.001,0.001,0.1,0.001,10,low network rates and low-battery entry sensitivity
+nominal_source_rates,0.005,0.005,0.1,0.005,10,nominal simulator network inputs and specified battery-entry probability
+high_source_rates,0.05,0.05,0.1,0.05,10,high stress rates from source-listed ranges; battery entry parameter is new
+nominal_short_wait,0.005,0.005,0.1,0.005,5,nominal rates with shorter bounded stopping interval
+nominal_long_wait,0.005,0.005,0.1,0.005,15,nominal rates with longer thesis-listed stopping candidate

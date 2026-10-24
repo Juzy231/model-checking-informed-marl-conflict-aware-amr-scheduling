@@ -1,0 +1,9 @@
+// Four synchronized checker transitions per logical AMR tick.
+// 4,000 transitions therefore cover at most 1,000 logical ticks.
+Pmin=? [ F<=4000 "collision" ]
+Pmax=? [ F<=4000 "collision" ]
+Pmin=? [ F<=4000 "r0_pending" ]
+Pmax=? [ F<=4000 "r0_pending" ]
+Pmin=? [ F<=4000 "r1_pending" ]
+Pmax=? [ F<=4000 "r1_pending" ]
+Pmax=? [ F<=4000 "complete" ]
